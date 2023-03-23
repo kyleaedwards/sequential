@@ -1,6 +1,6 @@
 # Sequential
 
-An interactive task queue for single-cored organisms
+An interactive task queue for single-core organisms
 
 ## Installation
 

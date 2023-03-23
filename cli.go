@@ -26,7 +26,7 @@ func GetFlagBitmask() uint8 {
 	return mask
 }
 
-const HelpText = `Sequential: An interactive task queue for single-cored organisms
+const HelpText = `Sequential: An interactive task queue for single-core organisms
 
 Usage:
 
