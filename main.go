@@ -117,12 +117,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Handles user input on the new task prompt.
 func (m *model) handleNewTask(msg tea.KeyMsg) tea.Cmd {
 	switch msg.Type {
-	case tea.KeyCtrlC, tea.KeyEsc:
+	case tea.KeyCtrlC:
 		return tea.Quit
+	case tea.KeyEsc:
+		m.selected = -1
+		return nil
 	case tea.KeyEnter:
 		m.tasks.Lines = append(m.tasks.Lines, m.textInput.Value())
 		m.tasks.Save()
-		return tea.Quit
+		m.selected = -1
+		return nil
 	}
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
@@ -136,7 +140,7 @@ func (m *model) handleSelection(msg tea.KeyMsg) tea.Cmd {
 		return tea.Quit
 	case "up", "k":
 		min := MarkTaskComplete
-		if len(m.tasks.Lines) == 0 {
+		if m.isEmpty() {
 			min = AddNewTask
 		}
 		if m.cursor > min {
@@ -144,14 +148,14 @@ func (m *model) handleSelection(msg tea.KeyMsg) tea.Cmd {
 		}
 	case "down", "j":
 		max := ShuffleTask
-		if len(m.tasks.Lines) < 2 {
+		if !m.isShuffable() {
 			max = AddNewTask
 		}
 		if m.cursor < max {
 			m.cursor++
 		}
 	case "enter", " ":
-		if m.cursor == ShuffleTask {
+		if m.getCursorPosition() == ShuffleTask {
 			if len(m.tasks.Lines) < 2 {
 				return tea.Quit
 			}
@@ -160,13 +164,13 @@ func (m *model) handleSelection(msg tea.KeyMsg) tea.Cmd {
 			m.tasks.Lines[swapIndex] = m.tasks.Lines[0]
 			m.tasks.Lines[0] = swap
 			m.tasks.Save()
-		} else if m.cursor == 0 {
+		} else if m.getCursorPosition() == 0 {
 			m.completed.Lines = append(m.completed.Lines, m.tasks.Lines[0])
 			m.completed.Save()
 			m.tasks.Lines = m.tasks.Lines[1:]
 			m.tasks.Save()
 		} else {
-			m.selected = m.cursor
+			m.selected = m.getCursorPosition()
 			if m.selected == AddNewTask {
 				return textinput.Blink
 			}
@@ -201,30 +205,38 @@ func (m model) View() string {
 	return s
 }
 
+func (m *model) isEmpty() bool {
+	return len(m.tasks.Lines) == 0
+}
+
+func (m *model) isShuffable() bool {
+	return len(m.tasks.Lines) >= 2
+}
+
+// Reposition the cursor to handle disabled cases.
+func (m *model) getCursorPosition() TaskOption {
+	cursorPos := m.cursor
+	if m.cursor == MarkTaskComplete && m.isEmpty() {
+		cursorPos = AddNewTask
+	}
+	if m.cursor == ShuffleTask && !m.isShuffable() {
+		cursorPos = AddNewTask
+	}
+	return cursorPos
+}
+
 // Handle specific rendering tasks for the selection menu view.
 func (m *model) renderSelectionView() string {
 	var s string
-
-	// Reposition the cursor to handle disabled cases.
-	cursorPos := m.cursor
-	lineLength := len(m.tasks.Lines)
-	isEmpty := lineLength == 0
-	isShuffable := lineLength >= 2
-	if m.cursor == MarkTaskComplete && isEmpty {
-		cursorPos = AddNewTask
-	}
-	if m.cursor == ShuffleTask && !isShuffable {
-		cursorPos = AddNewTask
-	}
 
 	for i := 0; i < len(TaskOptionLabels); i++ {
 		j := TaskOption(i)
 		cursor := " "
 		choice := TaskOptionLabels[j]
-		if (!isShuffable && j == ShuffleTask) || (isEmpty && j == MarkTaskComplete) {
+		if (!m.isShuffable() && j == ShuffleTask) || (m.isEmpty() && j == MarkTaskComplete) {
 			choice = m.appStyles.Disabled.Render(choice)
 		}
-		if cursorPos == j {
+		if m.getCursorPosition() == j {
 			cursor = m.appStyles.Selected.Render(">")
 			choice = m.appStyles.Selected.Render(choice)
 		}
