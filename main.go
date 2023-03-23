@@ -162,6 +162,8 @@ func (m *model) handleSelection(msg tea.KeyMsg) tea.Cmd {
 			m.tasks.Lines[0] = swap
 			m.tasks.Save()
 		} else if m.cursor == 0 {
+			m.completed.Lines = append(m.completed.Lines, m.tasks.Lines[0])
+			m.completed.Save()
 			m.tasks.Lines = m.tasks.Lines[1:]
 			m.tasks.Save()
 		} else {
