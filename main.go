@@ -45,6 +45,7 @@ var TaskOptionLabels = map[TaskOption]string{
 
 // Top-level model passed to the Bubbletea TUI module.
 type model struct {
+	config    Config
 	tasks     *Logfile
 	completed *Logfile
 	textInput textinput.Model
@@ -61,28 +62,26 @@ type AppStyles struct {
 }
 
 // Initializes the Bubbletea model
-func createModel(tasks *Logfile, completed *Logfile) model {
+func createModel(config Config, tasks *Logfile, completed *Logfile) model {
 	ti := textinput.New()
 	ti.Placeholder = "Enter your task description"
 	ti.Focus()
 
-	// TODO: Make these customizable from a
-	// ~/.sequential/config.json file.
 	appStyles := AppStyles{
 		Selected: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#7D56F4")),
+			Foreground(lipgloss.Color(config.Styles.SelectedColor)),
 		Completed: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#7DF456")),
+			Foreground(lipgloss.Color(config.Styles.CompletedColor)),
 		Title: lipgloss.NewStyle().
 			Bold(true),
 		Disabled: lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("#777777")),
+			Foreground(lipgloss.Color(config.Styles.DisabledColor)),
 	}
 
 	return model{
+		config:    config,
 		tasks:     tasks,
 		completed: completed,
 		textInput: ti,
@@ -238,6 +237,7 @@ func (m *model) renderSelectionView() string {
 func main() {
 	tasks := LoadLogfile("current.txt")
 	completed := LoadLogfile("completed.txt")
+	config := LoadConfig()
 
 	defer tasks.Close()
 	defer completed.Close()
@@ -253,7 +253,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	m := createModel(tasks, completed)
+	m := createModel(config, tasks, completed)
 	p := tea.NewProgram(m)
 
 	if _, err := p.Run(); err != nil {
