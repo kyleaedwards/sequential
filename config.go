@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -26,7 +25,6 @@ var defaultStyles = ConfigStyles{
 
 // Fills empty unmarshalled config data with default values.
 func setDefaults(config *Config) {
-	fmt.Println(config)
 	if config.Styles.SelectedColor == "" {
 		config.Styles.SelectedColor = defaultStyles.SelectedColor
 	}
