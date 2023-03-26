@@ -125,6 +125,7 @@ func (m *model) handleNewTask(msg tea.KeyMsg) tea.Cmd {
 	case tea.KeyEnter:
 		m.tasks.Lines = append(m.tasks.Lines, m.textInput.Value())
 		m.tasks.Save()
+		m.textInput.SetValue("")
 		m.selected = -1
 		return nil
 	}
